@@ -1,3 +1,12 @@
+# Added Extension: Categories REST API
+This Flask application has been enhanced with a backend REST API that handles Categories using full CRUD functionality and JSON messaging.
+
+## API Endpoints:
+- `POST /api/categories` - Create a category (Requires json: `{"name": "xyz"}`)
+- `GET /api/categories` - Fetch all categories
+- `PUT /api/categories/<id>` - Update category name/description
+- `DELETE /api/categories/<id>` - Delete a category
+- 
 # Flask Blog Web App
 
 This is a simple blog web application built with Flask, a micro web framework written in Python. It uses SQLite3 as the database and Flask-SQLAlchemy for Object Relational Mapping (ORM).
