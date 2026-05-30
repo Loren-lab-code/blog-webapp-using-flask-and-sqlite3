@@ -16,6 +16,14 @@ class BlogPost(db.Model):
     def __repr__(self):
         return 'Blog post ' + str(self.id)
 
+class Category(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(50), nullable=False, unique=True)
+    description = db.Column(db.String(200), nullable=True)
+
+    def to_dict(self):
+        return {"id": self.id, "name": self.name, "description": self.description}
+
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -69,6 +77,72 @@ def new_post():
     else:
         # Add your code here for handling GET requests
         return render_template('new_post.html')
+
+from flask import jsonify, request
+
+# CREATE a New Category
+@app.route('/api/categories', methods=['POST'])
+def create_category():
+    data = request.get_json()
+    if not data or 'name' not in data:
+        return jsonify({"error": "Missing required field: 'name'"}), 400
+    
+    # Check if category already exists
+    if Category.query.filter_by(name=data['name']).first():
+        return jsonify({"error": "Category already exists"}), 400
+        
+    try:
+        new_category = Category(name=data['name'], description=data.get('description', ''))
+        db.session.add(new_category)
+        db.session.commit()
+        return jsonify(new_category.to_dict()), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 400
+
+# READ All Categories
+@app.route('/api/categories', methods=['GET'])
+def get_categories():
+    categories = Category.query.all()
+    return jsonify([cat.to_dict() for cat in categories]), 200
+
+# UPDATE an Existing Category
+@app.route('/api/categories/<int:id>', methods=['PUT'])
+def update_category(id):
+    category = Category.query.get(id)
+    if not category:
+        return jsonify({"error": "Category not found"}), 404
+        
+    data = request.get_json()
+    if not data:
+        return jsonify({"error": "No data provided"}), 400
+        
+    if 'name' in data:
+        category.name = data['name']
+    if 'description' in data:
+        category.description = data['description']
+        
+    try:
+        db.session.commit()
+        return jsonify(category.to_dict()), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 400
+
+# DELETE a Category
+@app.route('/api/categories/<int:id>', methods=['DELETE'])
+def delete_category(id):
+    category = Category.query.get(id)
+    if not category:
+        return jsonify({"error": "Category not found"}), 404
+        
+    try:
+        db.session.delete(category)
+        db.session.commit()
+        return jsonify({"message": "Category deleted successfully"}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 400
 
 if __name__ == "__main__":
     app.run(debug=True, host='0.0.0.0')
